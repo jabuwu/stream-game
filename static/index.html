@@ -6,28 +6,76 @@
 		html, body {
 			background-color: #111;
 			text-align: center;
+			margin-top: 20px;
+			font-family:'Courier New', Courier, monospace;
 		}
+		.noselect {
+			-webkit-touch-callout: none;
+				-webkit-user-select: none;
+				-khtml-user-select: none;
+				-moz-user-select: none;
+					-ms-user-select: none;
+						user-select: none;
+}
 	</style>
 	
 </head>
-<body onkeydown="keydown(event)" onkeyup="keyup(event)">
-	<canvas id="video-canvas"></canvas>
+<body>
+	<span class="noselect" style="color: white; font-size: 38px">Adventure of BunBun</span>
+	<div id="container" class="noselect" style="margin: auto; width: 512px; height: 512px; background-color: #222; position: relative">
+		<div style="color: white; padding-top: 200px; font-size: 80px">Loading</div>
+		<div id="game" style="position: absolute; top: 0px"></div>
+	</div>
 	<script type="text/javascript" src="jsmpeg.min.js"></script>
 	<script type="text/javascript" src="socket.io.min.js"></script>
 	<script type="text/javascript">
-		var socket = io();
-		var canvas = document.getElementById('video-canvas');
-		var url = 'ws://'+document.location.hostname+':8082/';
-		var player = new JSMpeg.Player(url, {canvas: canvas});
+		let socket = io();
+		let player;
+		let show = false;
+		function startPlayer() {
+			if (!player) {
+				let url = 'ws://'+document.location.hostname+':8082/';
+				document.getElementById('game').innerHTML = '<canvas id="video-canvas" style="opacity: 0"></canvas>';
+				let canvas = document.getElementById('video-canvas');
+				player = new JSMpeg.Player(url, {
+					canvas: canvas,
+					pauseWhenHidden: false,
+					onVideoDecode: () => {
+						if (!show) {
+							canvas.style.opacity = '1';
+							show = true;
+						}
+					}
+				});
+			}
+		}
+		function stopPlayer() {
+			if (player) {
+				player.destroy();
+				document.getElementById('game').innerHTML = '';
+				show = false;
+				player = null;
+			}
+		}
 		socket.on('connect', () => {
-			console.log('connected');
+			startPlayer();
 		});
-		function keydown(event) {
+		socket.on('disconnect', () => {
+			stopPlayer();
+		});
+		document.addEventListener('keydown', function(event) {
 			socket.emit('onkeydown', event.keyCode);
-		}
-		function keyup(event) {
+		});
+		document.addEventListener('keyup', function(event) {
 			socket.emit('onkeyup', event.keyCode);
-		}
+		});
+		document.addEventListener('visibilitychange', function(e, ee) {
+			if (document.visibilityState === 'visible') {
+				startPlayer();
+			} else {
+				stopPlayer();
+			}
+		});
 	</script>
 </body>
 </html>
