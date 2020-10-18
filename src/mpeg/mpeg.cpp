@@ -63,7 +63,8 @@ void Mpeg::add_video_stream(OutputStream *ost, AVFormatContext *oc, enum AVCodec
     c = ost->st->codec;
 
     /* Put sample parameters. */
-    c->bit_rate = 400000;
+    //c->bit_rate = 400000;
+    c->bit_rate = 1000000;
     //c->bit_rate = 4000;
     /* Resolution must be a multiple of two. */
     //c->width    = 352;
